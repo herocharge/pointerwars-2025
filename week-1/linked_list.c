@@ -32,7 +32,7 @@ struct linked_list * linked_list_create(void){
 //
 bool linked_list_delete(struct linked_list * ll){
     if(ll == NULL)
-        return true;
+        return false;
     
     struct node* curr = ll->head;
     while(curr != NULL){
@@ -246,7 +246,7 @@ struct iterator * linked_list_create_iterator(struct linked_list * ll,
 //
 bool linked_list_delete_iterator(struct iterator * iter){
     if(iter == NULL)
-        return true;
+        return false;
 
     free_fptr(iter);
 
