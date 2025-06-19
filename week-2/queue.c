@@ -1,7 +1,7 @@
 #include "queue.h"
 
-static void * (*malloc_fptr)(size_t size) = malloc;
-static void   (*free_fptr)(void* addr)    = free;
+static void * (*malloc_fptr)(size_t size);
+static void   (*free_fptr)(void* addr);
 
 // Returns pointer to the linked list memeber of the queue
 struct linked_list * _queue_get_ll(struct queue* queue){

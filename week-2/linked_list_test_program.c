@@ -457,6 +457,8 @@ int main(void) {
     check_insertion_functionality();
     check_find_functionality();
 
+    queue_register_malloc(&instrumented_malloc);
+    queue_register_free(&free);
     check_queue();
 
     return 0;

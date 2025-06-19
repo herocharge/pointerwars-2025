@@ -1,11 +1,10 @@
 #include "linked_list.h"
-#include <stdlib.h>
-#include <stdio.h>
+
 // Function pointers to (potentially) custom malloc() and
 // free() functions.
 //
-static void * (*malloc_fptr)(size_t size) = malloc;
-static void   (*free_fptr)(void* addr)    = free;
+static void * (*malloc_fptr)(size_t size) ;
+static void   (*free_fptr)(void* addr);
 
 
 // Creates a new linked_list.
