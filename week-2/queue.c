@@ -153,6 +153,7 @@ bool queue_next(struct queue * queue, unsigned int * popped_data){
 // Returns TRUE on success, FALSE otherwise.
 //
 bool queue_register_malloc(void * (*malloc)(size_t)){
+    linked_list_register_malloc(malloc);
     malloc_fptr = malloc;
     return true;
 }
@@ -163,6 +164,7 @@ bool queue_register_malloc(void * (*malloc)(size_t)){
 // Returns TRUE on success, FALSE otherwise.
 //
 bool queue_register_free(void (*free)(void*)){
+    linked_list_register_free(free);
     free_fptr = free;
     return true;
 }

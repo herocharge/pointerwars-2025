@@ -85,7 +85,16 @@ bool linked_list_insert_end(struct linked_list * ll,
                             unsigned int data){
     if(ll == NULL) 
         return false;
-    struct node* new_node = malloc_fptr(sizeof(struct node));
+    struct node* new_node = NULL;
+
+    // Take extra nodes after tail if available instead of allocating again
+    if(ll->tail != NULL && ll->tail->next != NULL){
+        ll->tail->next = ll->tail->next->next;
+        new_node = ll->tail->next;
+    }
+    else {
+        new_node = malloc_fptr(sizeof(struct node));
+    }
     if(new_node == NULL)
         return false;
 
@@ -97,6 +106,7 @@ bool linked_list_insert_end(struct linked_list * ll,
         ll->tail = new_node;
     }
     else{
+        new_node->next = ll->tail->next;
         ll->tail->next = new_node;
         ll->tail = new_node;
     }
@@ -104,6 +114,7 @@ bool linked_list_insert_end(struct linked_list * ll,
     ll->size += 1;
     return true;
 }
+
 
 // Inserts an element at the front of the linked_list.
 // \param ll   : Pointer to linked_list.
@@ -114,7 +125,14 @@ bool linked_list_insert_front(struct linked_list * ll,
                               unsigned int data){
     if(ll == NULL) 
         return false;
-    struct node* new_node = malloc_fptr(sizeof(struct node));
+    struct node* new_node = NULL;
+    if(ll->tail != NULL && ll->tail->next != NULL){
+        ll->tail->next = ll->tail->next->next;
+        new_node = ll->tail->next;
+    }
+    else {
+        new_node = malloc_fptr(sizeof(struct node));
+    }
     if(new_node == NULL)
         return false;
 
@@ -149,7 +167,14 @@ bool linked_list_insert(struct linked_list * ll,
     if(index == ll->size)
         return linked_list_insert_end(ll, data);
 
-    struct node* new_node = malloc_fptr(sizeof(struct node));
+    struct node* new_node = NULL;
+    if(ll->tail != NULL && ll->tail->next != NULL){
+        ll->tail->next = ll->tail->next->next;
+        new_node = ll->tail->next;
+    }
+    else {
+        new_node = malloc_fptr(sizeof(struct node));
+    }
     if(new_node == NULL)
         return false;
     
@@ -185,7 +210,7 @@ size_t linked_list_find(struct linked_list * ll,
     size_t index = 0;
 
     // TODO: should we use iterators?
-    while(curr != NULL){
+    while(curr != NULL && index < ll->size){
         if(curr->data == data){
             return index;
         }
@@ -195,6 +220,12 @@ size_t linked_list_find(struct linked_list * ll,
     return SIZE_MAX;
 }
 
+
+bool __linked_list_insert_after_tail(struct linked_list* ll, struct node* node){
+    node->next = ll->tail->next;
+    ll->tail->next = node;
+    return true;
+}
 
 // Removes a node from the linked_list at a specific index.
 // \param ll    : Pointer to linked_list.
@@ -234,12 +265,16 @@ bool linked_list_remove(struct linked_list * ll,
     struct node* node_to_remove = curr->next;
     
     // Update tail if needed
-    if(node_to_remove->next == NULL){
+    if(index == ll->size - 1){
         ll->tail = curr;
     }
     
     curr->next = node_to_remove->next;
-    free_fptr(node_to_remove);
+    // free_fptr(node_to_remove);
+    // Instead of freeing, let's just place it after tail
+    if(index != ll->size - 1)
+        __linked_list_insert_after_tail(ll, node_to_remove);
+    
     ll->size -= 1;
     return true;
 }
@@ -252,6 +287,9 @@ bool linked_list_remove(struct linked_list * ll,
 struct iterator * linked_list_create_iterator(struct linked_list * ll,
                                               size_t index){
     if(ll == NULL)
+        return NULL;
+    
+    if(index >= ll->size)
         return NULL;
     
     struct node* curr = ll->head;

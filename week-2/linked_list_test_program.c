@@ -8,6 +8,19 @@
 #include "linked_list.h"
 #include "queue.h"
 
+// Check that valid compiler defines have been passed in.
+//
+#ifdef TEST_LINKED_LIST
+#define VALID_TEST
+#endif
+
+#ifdef TEST_QUEUE
+#define VALID_TEST
+#endif
+
+#ifndef VALID_TEST
+#error "Improper set of compiler defines specified, check Makefile"
+#endif
 
 #define TEST(x) printf("Running test " #x "\n"); fflush(stdout);
 #define SUBTEST(x) printf("    Executing subtest " #x "\n"); fflush(stdout); \
@@ -60,11 +73,15 @@ void * instrumented_malloc(size_t size) {
     return ptr;
 }
 
+// Tests linked list and queue handling of being passed NULL pointers.
+//
 void check_null_handling(void) {
-    TEST(check_null_handling)
+    bool status = false;
+#ifdef TEST_LINKED_LIST
+    TEST(linked_list_check_null_handling)
 
     SUBTEST(linked_list_delete)
-    bool status = linked_list_delete(NULL);
+    status = linked_list_delete(NULL);
     FAIL(status != false,
          "linked_list_delete(NULL) did not return false")
 
@@ -103,10 +120,56 @@ void check_null_handling(void) {
     FAIL(index != SIZE_MAX,
          "linked_list_find(NULL, 0) did not return SIZE_MAX");
 
-    PASS(check_null_handling)
+    PASS(linked_list_check_null_handling)
+#endif
+
+#ifdef TEST_QUEUE
+    TEST(queue_check_null_handling)
+
+    SUBTEST(queue_delete)
+    status = queue_delete(NULL);
+    FAIL(status != false,
+         "queue_delete(NULL) did not return false");
+
+    SUBTEST(queue_push)
+    status = queue_push(NULL, 1);
+    FAIL(status != false,
+         "queue_push(NULL, 1) did not return false");
+
+    SUBTEST(queue_pop_1)
+    unsigned int popped_value = 7;
+    status = queue_pop(NULL, &popped_value);
+    FAIL(status != false,
+         "queue_pop(NULL, &popped_value) did not return false");
+    SUBTEST(queue_pop_2)
+    FAIL(popped_value != 7,
+         "queue_pop(NULL, &popped_value) modified the variable popped_value")
+
+    SUBTEST(queue_size)
+    size_t size = queue_size(NULL);
+    FAIL(size != SIZE_MAX,
+         "queue_size(NULL) did not return SIZE_MAX");
+
+    SUBTEST(queue_has_next)
+    status = queue_has_next(NULL);
+    FAIL(status != false,
+         "queue_has_next(NULL) did not return false");
+
+    SUBTEST(queue_next_1)
+    unsigned int next_value = 7;
+    status = queue_next(NULL, &next_value);
+    FAIL(status != false,
+         "queue_next(NULL, &next_value) did not return false")
+    SUBTEST(queue_next_2)
+    FAIL(next_value != 7,
+         "queue_next(NULL, &next_value) modified the variable next_value");
+
+    PASS(queue_check_null_handling)
+#endif
 }
 
-void check_empty_list_properties(void) {
+void check_empty_list_and_queue_properties(void) {
+#ifdef TEST_LINKED_LIST
     TEST(check_empty_list_properties)
     SUBTEST(linked_list_create)
     struct linked_list * ll = linked_list_create();
@@ -145,10 +208,41 @@ void check_empty_list_properties(void) {
     linked_list_delete_iterator(iter);
     linked_list_delete(ll);
     PASS(check_empty_list_properties)
+#endif
+
+#ifdef TEST_QUEUE
+    // Check empty queue properties.
+    //
+    TEST(check_empty_queue_properties)
+    SUBTEST(queue_create)
+    struct queue * queue = queue_create();
+    FAIL(queue == NULL,
+         "Failed to create queue.");
+    
+    SUBTEST(queue_size)
+    size_t size = queue_size(queue);
+    FAIL(size != 0,
+         "queue_size() returned non-zero for empty queue.")
+
+    SUBTEST(queue_has_next)
+    bool status = queue_has_next(queue);
+    FAIL(status != false,
+         "queue_has_next() on empty queue did not return false")
+
+    SUBTEST(queue_pop)
+    unsigned int data = 0;
+    status = queue_pop(queue, &data);
+    FAIL(status != false,
+         "queue_pop() on empty queue did not return false")
+    queue_delete(queue);
+    PASS(check_empty_queue_properties)
+#endif
 }
 
 void check_insertion_functionality(void) {
-    TEST(check_insertion_functionality)
+    bool status = false;
+#ifdef TEST_LINKED_LIST
+    TEST(check_linked_list_insertion_functionality)
     SUBTEST(check_insert_end)
     // Check insertion at end with an iterator.
     // Inserts 1, 2, 3, 4 into the list, verifies
@@ -287,7 +381,7 @@ void check_insertion_functionality(void) {
     ll = linked_list_create();
     FAIL(ll == NULL,
          "Failed to create new linked_list (#5)")
-    bool status = linked_list_insert(ll, 0, 1);
+    status = linked_list_insert(ll, 0, 1);
     FAIL(status == false,
          "Failed to insert 1 at the beginning of linked_list (#5)")
     status = linked_list_insert(ll, 1, 2);
@@ -316,11 +410,76 @@ void check_insertion_functionality(void) {
     linked_list_delete(ll);
     linked_list_delete_iterator(iter);
 
-    PASS(check_insertion_functionality)
+    PASS(check_linked_list_insertion_functionality)
+#endif
+
+#ifdef TEST_QUEUE
+    TEST(check_queue_push_functionality)
+
+    SUBTEST(queue_push)
+    struct queue * queue = queue_create();
+    FAIL(queue == NULL,
+         "Failed to create new queue.")
+
+    // Push 1 through 5 into the queue.
+    //
+    for (size_t i = 1; i <= 5; i++) {
+        bool status = queue_push(queue, i);
+	FAIL(status == false,
+             "Failed to push into queue.")
+    }
+
+    // Check size, has_next.
+    //
+    size_t size = queue_size(queue);
+    FAIL(size != 5,
+         "queue_size() did not return 5")
+    bool has_next = queue_has_next(queue);
+    FAIL(has_next == false,
+         "queue_has_next() did not return true on non-empty queue")
+
+    SUBTEST(queue_next_value)
+    unsigned int data = 0;
+    status = queue_next(queue, &data);
+    FAIL(status == false,
+         "queue_next() did not return true on non-empty queue")
+    FAIL(data != 1,
+         "Head of queue's data was not equal to 1")
+
+    PASS(check_queue_push_functionality)
+
+    TEST(queue_pop_values)
+    SUBTEST(pop_all_values)
+    for (size_t i = 1; i <= 5; i++) {
+        bool status = queue_pop(queue, &data);
+	FAIL(status == false,
+             "queue_pop() return false on non-empty queue")
+        FAIL(data != i,
+             "queue_pop() did not return correct data on pop")
+    }
+
+    SUBTEST(queue_empty_after_pop_checks)
+    size = queue_size(queue);
+    FAIL(size != 0,
+         "queue size non-zero after all values popped")
+    status = queue_has_next(queue);
+    FAIL(status != false,
+         "queue_has_next() returned true after all values popped from queue")
+    status = queue_pop(queue, &data);
+    FAIL(status == true,
+         "queue_pop() returned true after all values popped from queue")
+
+    status = queue_delete(queue);
+    FAIL(status == false,
+         "Failed to delete queue");
+
+    PASS(queue_pop_values)
+#endif
 }
 
-void check_find_functionality(void) {
-    TEST(check_find_functionality)
+void check_linked_list_find_functionality(void) {
+#ifdef TEST_LINKED_LIST
+    TEST(check_linked_list_find_functionality)
 
     // Single linked_list, find elements.
     //
@@ -371,76 +530,33 @@ void check_find_functionality(void) {
 
     linked_list_delete(ll);
 
-    PASS(check_find_functionality)
+    PASS(check_linked_list_find_functionality)
+#endif
 }
 
+void check_linked_list_additional_delete_tests(void) {
+#ifdef TEST_LINKED_LIST
+    TEST(linked_list_additional_delete_tests)
 
-/// @brief  Test generated courtesy of gemini
-/// @param  
-void check_queue(void) {
-
-    TEST(check_queue)
-
-    // Create a queue.
+    SUBTEST(insert_and_delete_non_empty_linked_list)
+    // Add 5 values onto the list and delete it.
+    // Not expected that this will catch any functional
+    // failures, but it might catch memory leak ones.
     //
-    SUBTEST(queue_create)
-    struct queue * q = queue_create();
-    FAIL(q == NULL,
-         "Failed to create queue")
+    struct linked_list * ll = linked_list_create();
+    for (size_t i = 1; i <= 5; i++) {
+        bool status = linked_list_insert_end(ll, i);
+	FAIL(status == false,
+             "linked_list_insert_end() failed.")
+    }
 
-    // Enqueue some data.
-    //
-    SUBTEST(queue_push)
-    bool status = queue_push(q, 1);
+    bool status = linked_list_delete(ll);
     FAIL(status == false,
-         "Failed to enqueue 1")
-    status = queue_push(q, 2);
-    FAIL(status == false,
-         "Failed to enqueue 2")
-    status = queue_push(q, 3);
-    FAIL(status == false,
-         "Failed to enqueue 3")
+         "Failed to delete non-empty linked_list.")
 
-    // Dequeue data and check order.
-    //
-    SUBTEST(queue_pop)
-    unsigned int data = 0;
-    status = queue_pop(q, &data);
-    FAIL(status == false || data != 1,
-         "Failed to dequeue 1 or dequeued incorrect data")
-    status = queue_pop(q, &data);
-    FAIL(status == false || data != 2,
-         "Failed to dequeue 2 or dequeued incorrect data")
-    status = queue_pop(q, &data);
-    FAIL(status == false || data != 3,
-         "Failed to dequeue 3 or dequeued incorrect data")
-
-    // Dequeue from an empty queue.
-    //
-    SUBTEST(queue_pop_empty)
-    status = queue_pop(q, &data);
-    FAIL(status != false,
-         "Dequeued from an empty queue successfully")
-
-    // Enqueue and dequeue again.
-    //
-    SUBTEST(queue_push_pop_again)
-    status = queue_push(q, 10);
-    FAIL(status == false,
-         "Failed to enqueue 10")
-    status = queue_pop(q, &data);
-    FAIL(status == false || data != 10,
-         "Failed to dequeue 10 or dequeued incorrect data")
-
-    // Delete the queue.
-    //
-    SUBTEST(queue_delete)
-    status = queue_delete(q);
-    FAIL(status == false,         "Failed to delete queue")
-
-    PASS(check_queue)
+    PASS(linked_list_additional_delete_tests)
+#endif 
 }
-
 
 int main(void) {
     // Set up signal handler for catching infinite loops.
@@ -451,15 +567,15 @@ int main(void) {
     //
     linked_list_register_malloc(&instrumented_malloc);
     linked_list_register_free(&free);
-
-    check_null_handling();
-    check_empty_list_properties();
-    check_insertion_functionality();
-    check_find_functionality();
-
     queue_register_malloc(&instrumented_malloc);
     queue_register_free(&free);
-    check_queue();
+
+    check_null_handling();
+    check_empty_list_and_queue_properties();
+    check_insertion_functionality();
+    check_linked_list_find_functionality();
+
+    check_linked_list_additional_delete_tests();
 
     return 0;
 }

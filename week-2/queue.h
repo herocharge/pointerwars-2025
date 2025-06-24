@@ -1,8 +1,6 @@
 #ifndef _QUEUE_H
 #define _QUEUE_H
 
-#include <stdlib.h>
-
 #include "linked_list.h"
 
 // Some rules for Pointer Wars 2025 week 2:
