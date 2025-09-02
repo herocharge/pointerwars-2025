@@ -76,13 +76,9 @@ bool breadth_first_search(unsigned int i, unsigned int j) {
     unsigned int next_node = i;
     size_t node_count = 0;
     struct timespec start, stop;
-    int pushes = 0;
-    int pops = 0;
     GRAB_CLOCK(start)
     while(!found_path) {
         // Push data onto the queue.
-	//
-        // printf("next node:%u\n", next_node);
         struct row * row = rows[next_node];
 
 	if (row == NULL || row->visited) {
@@ -100,128 +96,27 @@ bool breadth_first_search(unsigned int i, unsigned int j) {
         for(size_t node = 0; node < row->size; node++) {
             unsigned int data = adjacent_nodes[node];
 
-            // Optimization 1: don't bother with nodes that were already visited
+            // Optimization: don't bother with nodes that were already visited
+            //               In some cases, this is not optimal
             if(rows[data] == NULL || rows[data]->visited)
                 continue;
+            
             // Check if we found the node.
             //
             if (j == data) {
                     found_path = true;
             }
             bool sanity = queue_push(queue, adjacent_nodes[node]);
-            // pushes += 1;
-            // fprintf(stderr, "PUSH\n");
             if (!sanity) {
                         printf("Error pushing into queue.\n");
                 return 1;
             }
 	    }
-
-        // unrolling the loop, coz why not?
-        // size_t node = 0;
-        // for(; node + 15 < row->size; node += 16) {
-        //     // TODO: SIMD This thing
-
-        //     unsigned int data1 = adjacent_nodes[node];
-        //     unsigned int data2 = adjacent_nodes[node+1];
-        //     unsigned int data3 = adjacent_nodes[node+2];
-        //     unsigned int data4 = adjacent_nodes[node+3];
-        //     unsigned int data5 = adjacent_nodes[node+4];
-        //     unsigned int data6 = adjacent_nodes[node+5];
-        //     unsigned int data7 = adjacent_nodes[node+6];
-        //     unsigned int data8 = adjacent_nodes[node+7];
-        //     unsigned int data9 = adjacent_nodes[node+8];
-        //     unsigned int data10 = adjacent_nodes[node+9];
-        //     unsigned int data11 = adjacent_nodes[node+10];
-        //     unsigned int data12 = adjacent_nodes[node+11];
-        //     unsigned int data13 = adjacent_nodes[node+12];
-        //     unsigned int data14 = adjacent_nodes[node+13];
-        //     unsigned int data15 = adjacent_nodes[node+14];
-        //     unsigned int data16 = adjacent_nodes[node+15];
-
-        //     if(j == data1 || j == data2 || j == data3 || j == data4 ||
-        //        j == data5 || j == data6 || j == data7 || j == data8 ||
-        //        j == data9 || j == data10 || j == data11 || j == data12 ||
-        //        j == data13 || j == data14 || j == data15 || j == data16) {
-        //         found_path = true;
-        //         break;
-        //     }
-
-        //     // if(rows[data1] != NULL && !rows[data1]->visited){
-        //         queue_push(queue, data1);
-        //     // }
-        //     // if(rows[data2] != NULL && !rows[data2]->visited){
-        //         queue_push(queue, data2);
-        //     // }
-        //     // if(rows[data3] != NULL && !rows[data3]->visited){
-        //         queue_push(queue, data3);
-        //     // }
-        //     // if(rows[data4] != NULL && !rows[data4]->visited){
-        //         queue_push(queue, data4);
-        //     // }
-        //     // if(rows[data5] != NULL && !rows[data5]->visited){
-        //         queue_push(queue, data5);
-        //     // }
-        //     // if(rows[data6] != NULL && !rows[data6]->visited){
-        //         queue_push(queue, data6);
-        //     // }
-        //     // if(rows[data7] != NULL && !rows[data7]->visited){
-        //         queue_push(queue, data7);
-        //     // }
-        //     // if(rows[data8] != NULL && !rows[data8]->visited){
-        //         queue_push(queue, data8);
-        //     // }
-        //     // if(rows[data9] != NULL && !rows[data9]->visited){
-        //         queue_push(queue, data9);
-        //     // }
-        //     // if(rows[data10] != NULL && !rows[data10]->visited){
-        //         queue_push(queue, data10);
-        //     // }
-        //     // if(rows[data11] != NULL && !rows[data11]->visited){
-        //         queue_push(queue, data11);
-        //     // }
-        //     // if(rows[data12] != NULL && !rows[data12]->visited){
-        //         queue_push(queue, data12);
-        //     // }
-        //     // if(rows[data13] != NULL && !rows[data13]->visited){
-        //         queue_push(queue, data13);
-        //     // }
-        //     // if(rows[data14] != NULL && !rows[data14]->visited){
-        //         queue_push(queue, data14);
-        //     // }
-        //     // if(rows[data15] != NULL && !rows[data15]->visited){
-        //         queue_push(queue, data15);
-        //     // }
-        //     // if(rows[data16] != NULL && !rows[data16]->visited){
-        //         queue_push(queue, data16);
-        //     // }
-        // }
-        // for(; node < row->size; node++) {
-        //     unsigned int data = adjacent_nodes[node];
-
-        //     // Optimization 1: don't bother with nodes that were already visited
-        //     // if(rows[data] == NULL || rows[data]->visited)
-        //     //     continue;
-        //     // Check if we found the node.
-        //     //
-        //     if (j == data) {
-        //             found_path = true;
-        //             break;
-        //     }
-        //     queue_push(queue, adjacent_nodes[node]);
-        //     // if (!sanity) {
-        //     //             printf("Error pushing into queue.\n");
-        //     //     return 1;
-        //     // }
-
-        // }
 	}
 
 	// Pop the next row off the queue.
 	//
 	bool full = queue_pop(queue, &next_node);
-    // pops += 1;
-    // fprintf(stderr, "POP\n");
 	if (!full) {
             break;
 	}
@@ -232,8 +127,6 @@ bool breadth_first_search(unsigned int i, unsigned int j) {
     long nanoseconds = compute_timespec_diff(start, stop);
     printf("Nodes visited: %ld\n", node_count);
     printf("Time elapsed [s]: %0.3f\n", (float)nanoseconds / 1000000000.0f);
-    fprintf(stderr, "%0.3f\n", (float)nanoseconds / 1000000000.0f);
-    fprintf(stderr, "%d %d\n", pushes, pops);
     printf("malloc calls : %ld free calls: %ld\n", malloc_invocations, free_invocations);
     printf("Estimated percentage of time spent in malloc() %0.3f\n", 100.0f * (float)(malloc_invocations * average_malloc_time) / (float)nanoseconds);
     printf("Estimated percentage of time spent in free(): %0.3f\n", 100.0f * (float)(free_invocations * average_free_time) / (float)nanoseconds);
